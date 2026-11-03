@@ -1,0 +1,166 @@
+---
+---
+
+@use 'abstracts/variables' with (
+  $theme: '{{ site.theme_mode }}',
+  $font-family-base: ('Pretendard Variable', Pretendard, 'Source Sans Pro', sans-serif),
+  $font-family-heading: ('Noto Serif KR', 'Pretendard Variable', serif)
+);
+
+/* prettier-ignore */
+@use 'main
+{%- if jekyll.environment == 'production' -%}
+  .bundle
+{%- endif -%}
+';
+
+/* append your custom style below */
+
+/* 컨셉: 점 격자 노트에 잉크로 적은 개발 기록. 색은 한 곳(잉크 블루)에만 쓰고 형광펜은 선택 영역과 아바타에만 쓴다. */
+
+@mixin light-ink {
+  --main-bg: #f3f5f8;
+  --main-border-color: #e1e6ee;
+  --text-color: #2b3445;
+  --text-muted-color: #5a657d;
+  --heading-color: #14213d;
+  --link-color: #2740e8;
+  --toc-highlight: #2740e8;
+  --blockquote-border-color: #c9d1e0;
+  --blockquote-text-color: #5a657d;
+  --topbar-bg: rgb(243 245 248 / 80%);
+  --card-bg: #fff;
+  --card-hover-bg: #fff;
+  --card-shadow: none;
+  --tag-border: #c9d1e0;
+  --inline-code-bg: rgb(39 64 232 / 8%);
+
+  --grid-dot: rgb(20 33 61 / 13%);
+  --card-line: #d5dce8;
+  --marker: #ffe45c;
+
+  --sidebar-bg: #14213d;
+  --sidebar-border-color: rgb(255 255 255 / 14%);
+  --sidebar-muted-color: #b6c0d8;
+  --sidebar-active-color: #fff;
+  --sidebar-hover-bg: rgb(255 255 255 / 9%);
+  --sidebar-btn-bg: rgb(255 255 255 / 8%);
+  --sidebar-btn-color: #c3cce2;
+  --site-title-color: #f3f5f8;
+  --site-subtitle-color: #aab4cc;
+  --avatar-border-color: #ffe45c;
+}
+
+@mixin dark-ink {
+  --main-bg: #0e1524;
+  --main-border-color: #1f2a42;
+  --text-color: #cdd5e6;
+  --text-muted-color: #8f9bb5;
+  --heading-color: #f2f5fc;
+  --link-color: #8fa3ff;
+  --toc-highlight: #8fa3ff;
+  --blockquote-border-color: #2a3654;
+  --blockquote-text-color: #8f9bb5;
+  --topbar-bg: rgb(14 21 36 / 80%);
+  --card-bg: #141d31;
+  --card-hover-bg: #182340;
+  --card-shadow: none;
+  --tag-border: #2e3b5c;
+  --inline-code-bg: rgb(143 163 255 / 12%);
+
+  --grid-dot: rgb(143 163 255 / 11%);
+  --card-line: #25314d;
+  --marker: #ffe45c;
+
+  --sidebar-bg: #0a101d;
+}
+
+html:not([data-mode]),
+html[data-mode='light'] {
+  @include light-ink;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-mode]) {
+    @include dark-ink;
+  }
+}
+
+html[data-mode='dark'] {
+  @include dark-ink;
+}
+
+/* 종이: 본문 영역에 점 격자를 깐다 */
+#main-wrapper {
+  background-color: var(--main-bg);
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* 한글은 어절 단위로 줄바꿈하고, 본문 행간을 넉넉하게 둔다 */
+body {
+  letter-spacing: -0.01em;
+}
+
+.content,
+.card-text,
+.post-content {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-height: 1.8;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+#sidebar .site-title {
+  font-size: 1.6rem;
+}
+
+/* 목록 카드: 그림자 대신 윤곽선으로 구분한다 */
+.card-wrapper {
+  border: 1px solid var(--card-line);
+  border-radius: 4px;
+}
+
+.card-wrapper:hover {
+  border-color: var(--link-color);
+  box-shadow: 3px 3px 0 var(--marker);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-wrapper {
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+}
+
+/* 태그: 각진 라벨, 마우스를 올리면 형광펜 */
+a.post-tag {
+  border-radius: 3px;
+}
+
+a.post-tag:hover {
+  background: var(--marker);
+  border-color: var(--marker);
+  color: #14213d;
+}
+
+::selection {
+  background: var(--marker);
+  color: #14213d;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+}
