@@ -1,6 +1,6 @@
 ---
 title: 블로그를 열었습니다
-date: 2026-11-03 14:00:00 +0900
+date: 2026-11-03 12:00:00 +0900
 categories: [블로그]
 tags: [github-pages, jekyll, chirpy]
 description: GitHub Pages와 Chirpy 테마로 개발 블로그를 만든 과정을 정리했습니다.
