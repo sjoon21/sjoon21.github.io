@@ -4,95 +4,144 @@
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-  /* 홈 히어로: 노드 그래프. 노란 노드가 커서(없으면 자체 경로)를 따라 움직이고 가까운 노드와 이어진다. */
+  /* 홈 히어로: 블로그 지식 그래프. 글, 카테고리, 태그를 노드로 그리고 끌어 볼 수 있으며, 글 노드를 누르면 글로 이동한다. */
   function initHero() {
     const hero = document.getElementById('ink-hero');
-    if (!hero) return;
+    const dataEl = document.getElementById('ink-graph-data');
+    if (!hero || !dataEl || !window.InkGraph) return;
     const cv = hero.querySelector('canvas');
     const ctx = cv.getContext('2d');
-    const LINK = 120;
-    const REACH = 180;
-    let w = 0, h = 0, nodes = [], target = null, yellow = { x: 0, y: 0 }, raf = 0, onScreen = true;
+    const g = InkGraph.build(JSON.parse(dataEl.textContent));
+    const FONT = "'Pretendard Variable', Pretendard, sans-serif";
+    let W = 0, H = 0, box = null, alpha = 0.35, raf = 0, onScreen = true, hover = null, drag = null, moved = 0;
+
+    const neighbors = n => new Set(g.links.filter(l => l[0] === n || l[1] === n).flatMap(l => l));
+    const boxFor = () => (W < 720 ? { x0: 24, y0: H * 0.46, x1: W - 24, y1: H - 28 } : { x0: W * 0.42, y0: 36, x1: W - 36, y1: H - 36 });
 
     function resize() {
       const r = hero.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = r.width;
-      h = r.height;
-      cv.width = Math.round(w * dpr);
-      cv.height = Math.round(h * dpr);
+      const prev = box;
+      W = r.width; H = r.height;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.max(16, Math.round((w * h) / 7500));
-      nodes = Array.from({ length: n }, () => ({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
-      }));
-      yellow = { x: w * 0.75, y: h * 0.5 };
-      frame(0);
+      box = boxFor();
+      if (!prev) {
+        InkGraph.place(g, box);
+        InkGraph.settle(g, box);
+      } else {
+        for (const n of g.nodes) {
+          n.x = box.x0 + ((n.x - prev.x0) / (prev.x1 - prev.x0)) * (box.x1 - box.x0);
+          n.y = box.y0 + ((n.y - prev.y0) / (prev.y1 - prev.y0)) * (box.y1 - box.y0);
+        }
+        alpha = 0.2;
+      }
+      redraw();
     }
 
-    function frame(t) {
-      const animate = !reduceMotion.matches;
-      const gx = target ? target.x : w * 0.72 + Math.cos(t * 0.0006) * w * 0.2;
-      const gy = target ? target.y : h * 0.5 + Math.sin(t * 0.0011) * h * 0.32;
-      yellow.x += (gx - yellow.x) * 0.12;
-      yellow.y += (gy - yellow.y) * 0.12;
+    function draw(t) {
+      const drift = reduceMotion.matches ? 0 : 3;
+      for (const n of g.nodes) {
+        n.dx = n.x + Math.sin(t * 0.0008 + n.phase) * drift;
+        n.dy = n.y + Math.cos(t * 0.0007 + n.phase * 1.3) * drift;
+      }
+      const near = hover ? neighbors(hover) : null;
+      const lit = n => !near || near.has(n);
+      ctx.clearRect(0, 0, W, H);
 
-      if (animate) {
-        for (const n of nodes) {
-          const dx = yellow.x - n.x, dy = yellow.y - n.y, d = Math.hypot(dx, dy);
-          if (d < REACH && d > 1) {
-            // 멀리서는 살짝 끌리고, 40px 안으로 들어오면 밀려나 한곳에 뭉치지 않는다.
-            const pull = d < 40 ? -(1 - d / 40) * 0.05 : (1 - d / REACH) * 0.006;
-            n.vx += (dx / d) * pull;
-            n.vy += (dy / d) * pull;
-          }
-          const sp = Math.hypot(n.vx, n.vy);
-          if (sp > 0.6) { n.vx *= 0.6 / sp; n.vy *= 0.6 / sp; }
-          n.x += n.vx; n.y += n.vy;
-          if (n.x < 0 || n.x > w) n.vx *= -1;
-          if (n.y < 0 || n.y > h) n.vy *= -1;
-        }
+      for (const [a, b] of g.links) {
+        const on = hover && (a === hover || b === hover);
+        ctx.strokeStyle = on ? 'rgba(255,228,92,.95)' : `rgba(143,163,255,${near ? 0.1 : 0.32})`;
+        ctx.lineWidth = on ? 2 : 1.2;
+        ctx.beginPath(); ctx.moveTo(a.dx, a.dy); ctx.lineTo(b.dx, b.dy); ctx.stroke();
       }
 
-      ctx.clearRect(0, 0, w, h);
-      ctx.lineWidth = 1.2;
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
-          if (d < LINK) {
-            ctx.strokeStyle = `rgba(143,163,255,${(1 - d / LINK) * 0.5})`;
-            ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
-          }
+      for (const n of g.nodes) {
+        ctx.globalAlpha = lit(n) ? 1 : 0.25;
+        const on = n === hover;
+        if (on) { ctx.fillStyle = 'rgba(255,228,92,.2)'; ctx.beginPath(); ctx.arc(n.dx, n.dy, n.r + 9, 0, 6.2832); ctx.fill(); }
+        if (n.type === 'cat') {
+          ctx.fillStyle = '#14213d'; ctx.strokeStyle = on ? '#ffe45c' : '#f3f5f8'; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(n.dx, n.dy, n.r, 0, 6.2832); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = on ? '#ffe45c' : '#8fa3ff'; ctx.beginPath(); ctx.arc(n.dx, n.dy, 3, 0, 6.2832); ctx.fill();
+        } else {
+          ctx.fillStyle = on ? '#ffe45c' : n.type === 'post' ? '#f3f5f8' : 'rgba(143,163,255,.95)';
+          ctx.beginPath(); ctx.arc(n.dx, n.dy, n.r, 0, 6.2832); ctx.fill();
         }
-        const d = Math.hypot(nodes[i].x - yellow.x, nodes[i].y - yellow.y);
-        if (d < REACH) {
-          ctx.strokeStyle = `rgba(255,228,92,${(1 - d / REACH) * 0.8})`;
-          ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(yellow.x, yellow.y); ctx.stroke();
-        }
-      }
-      ctx.lineWidth = 1.5;
-      for (const n of nodes) {
-        ctx.fillStyle = '#14213d'; ctx.strokeStyle = 'rgba(243,245,248,.85)';
-        ctx.beginPath(); ctx.arc(n.x, n.y, 3, 0, 6.2832); ctx.fill(); ctx.stroke();
-      }
-      ctx.fillStyle = 'rgba(255,228,92,.18)';
-      ctx.beginPath(); ctx.arc(yellow.x, yellow.y, 16, 0, 6.2832); ctx.fill();
-      ctx.fillStyle = '#ffe45c';
-      ctx.beginPath(); ctx.arc(yellow.x, yellow.y, 6, 0, 6.2832); ctx.fill();
 
-      raf = animate && onScreen ? requestAnimationFrame(frame) : 0;
+        // 라벨: 글은 제목, 카테고리는 이름, 태그는 #이름. 가장자리 근처 노드는 왼쪽에 쓴다.
+        const left = n.dx > W - 200;
+        const full = on;
+        let text = n.type === 'tag' ? '#' + n.label : n.label;
+        if (n.type === 'post' && !full && text.length > 16) text = text.slice(0, 15) + '…';
+        ctx.font = `${n.type === 'tag' ? 500 : 600} ${n.type === 'tag' ? 11 : 13}px ${FONT}`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = left ? 'right' : 'left';
+        const tx = n.dx + (left ? -(n.r + 8) : n.r + 8);
+        if (full) {
+          const w = ctx.measureText(text).width;
+          ctx.fillStyle = 'rgba(10,16,29,.85)';
+          ctx.fillRect(left ? tx - w - 6 : tx - 6, n.dy - 11, w + 12, 22);
+        }
+        ctx.fillStyle = on ? '#ffe45c' : n.type === 'tag' ? 'rgba(170,180,204,.95)' : '#f3f5f8';
+        ctx.fillText(text, tx, n.dy);
+        ctx.globalAlpha = 1;
+      }
     }
 
-    const start = () => { if (!raf && onScreen && !reduceMotion.matches) raf = requestAnimationFrame(frame); };
+    function step(t) {
+      if (alpha > 0.02) { InkGraph.tick(g, { alpha, box }); alpha *= 0.985; }
+      draw(t);
+      raf = onScreen && !reduceMotion.matches ? requestAnimationFrame(step) : 0;
+    }
+    const redraw = () => { if (!raf) draw(performance.now()); };
+    const start = () => { if (!raf && onScreen && !reduceMotion.matches) raf = requestAnimationFrame(step); };
+
+    const pointer = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    function hit(p) {
+      let best = null, bestD = Infinity;
+      for (const n of g.nodes) {
+        const d = Math.hypot(n.dx - p.x, n.dy - p.y);
+        if (d < n.r + (n.type === 'tag' ? 10 : 14) && d < bestD) { best = n; bestD = d; }
+      }
+      return best;
+    }
+    const cursor = () => { cv.style.cursor = drag ? 'grabbing' : hover ? (hover.url ? 'pointer' : 'grab') : 'default'; };
+
+    cv.addEventListener('pointermove', e => {
+      const p = pointer(e);
+      if (drag) {
+        moved += Math.abs(e.movementX) + Math.abs(e.movementY);
+        drag.x = Math.min(box.x1, Math.max(box.x0, p.x));
+        drag.y = Math.min(box.y1, Math.max(box.y0, p.y));
+        alpha = 0.35;
+      } else {
+        hover = hit(p);
+      }
+      cursor(); redraw();
+    });
+    cv.addEventListener('pointerdown', e => {
+      const n = hit(pointer(e));
+      if (!n) return;
+      drag = n; hover = n; moved = 0; n.fixed = true;
+      cv.setPointerCapture(e.pointerId);
+      cursor(); start();
+    });
+    const release = () => {
+      if (!drag) return;
+      const n = drag;
+      n.fixed = false; drag = null;
+      if (moved < 5 && n.url) location.assign(n.url);
+      cursor(); start();
+    };
+    cv.addEventListener('pointerup', release);
+    cv.addEventListener('pointercancel', release);
+    cv.addEventListener('pointerleave', () => { if (!drag) { hover = null; cursor(); redraw(); } });
+
     new ResizeObserver(resize).observe(hero);
     new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; start(); }).observe(hero);
-    reduceMotion.addEventListener('change', () => { frame(0); start(); });
-    hero.addEventListener('pointermove', e => {
-      const r = hero.getBoundingClientRect();
-      target = { x: e.clientX - r.left, y: e.clientY - r.top };
-    });
-    ['pointerleave', 'pointercancel'].forEach(ev => hero.addEventListener(ev, () => { target = null; }));
+    reduceMotion.addEventListener('change', () => { redraw(); start(); });
+    document.fonts?.ready.then(redraw);
     resize();
     start();
   }
