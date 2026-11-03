@@ -195,7 +195,8 @@
 
   function run(item) {
     close();
-    if (item.mode) document.querySelector('[data-theme-mode="' + item.mode + '"]')?.click();
+    // Chirpy의 전역 Theme.update()를 쓴다. 테마 버튼을 대신 누르는 방식은 동작하지 않았다.
+    if (item.mode) window.Theme?.update(item.mode);
     else location.assign(item.url);
   }
 
