@@ -30,6 +30,12 @@ curl -s https://<계정>.github.io/assets/css/jekyll-theme-chirpy.css \
 
 `:root:not([data-bs-theme])`의 우선순위는 `(0,2,0)`입니다. 제가 쓴 `html:not([data-mode])`는 `(0,1,1)`이라서 밀렸습니다.
 
+## 직접 비교해 보기
+
+아래 계산기에서 두 선택자의 우선순위를 비교할 수 있습니다. 처음 들어 있는 값이 이 글의 두 선택자입니다.
+
+{% include specificity-demo.html %}
+
 ## 해결
 
 테마와 같은 선택자를 같은 순서로 씁니다. 라이트, 시스템 다크, 수동 다크 순서입니다.

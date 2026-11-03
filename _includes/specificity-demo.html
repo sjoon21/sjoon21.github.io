@@ -1,0 +1,45 @@
+<div class="spec" id="spec-demo">
+  <div class="spec__row">
+    <label for="spec-a">선택자 A</label>
+    <input id="spec-a" type="text" value="html:not([data-mode])" spellcheck="false" autocomplete="off">
+    <output class="spec__score" id="spec-a-out" aria-live="polite"></output>
+  </div>
+  <div class="spec__row">
+    <label for="spec-b">선택자 B</label>
+    <input id="spec-b" type="text" value=":root:not([data-bs-theme])" spellcheck="false" autocomplete="off">
+    <output class="spec__score" id="spec-b-out" aria-live="polite"></output>
+  </div>
+  <p class="spec__verdict" id="spec-verdict" aria-live="polite"></p>
+  <p class="spec__presets">
+    예시:
+    <button type="button" data-a=".post-desc" data-b="header .post-desc">.post-desc와 header .post-desc</button>
+    <button type="button" data-a="#main .card" data-b=".a.b.c.d.e.f.g.h.i.j.k">id 하나와 클래스 열한 개</button>
+    <button type="button" data-a=":where(#a) p" data-b="p">:where()는 0으로 계산</button>
+  </p>
+</div>
+<script src="{{ '/assets/js/specificity.js' | relative_url }}"></script>
+<script>
+  (function () {
+    const $ = id => document.getElementById(id);
+    const a = $('spec-a'), b = $('spec-b');
+    const fmt = v => '(' + v.join(', ') + ')';
+    function calc(input, out) {
+      try { const v = InkSpecificity.specificity(input.value.trim() || '*'); out.textContent = fmt(v); input.removeAttribute('aria-invalid'); return v; }
+      catch (e) { out.textContent = '계산할 수 없음'; input.setAttribute('aria-invalid', 'true'); return null; }
+    }
+    function update() {
+      const x = calc(a, $('spec-a-out')), y = calc(b, $('spec-b-out'));
+      const v = $('spec-verdict');
+      if (!x || !y) { v.textContent = '괄호가 닫혔는지 확인해 주세요.'; return; }
+      const c = InkSpecificity.compare(x, y);
+      v.textContent = c === 0
+        ? '우선순위가 같습니다. 나중에 쓴 규칙이 적용됩니다.'
+        : (c > 0 ? 'A가 이깁니다. ' : 'B가 이깁니다. ') + fmt(c > 0 ? x : y) + '이(가) ' + fmt(c > 0 ? y : x) + '보다 높습니다.';
+    }
+    [a, b].forEach(i => i.addEventListener('input', update));
+    document.querySelectorAll('#spec-demo .spec__presets button').forEach(btn => btn.addEventListener('click', () => {
+      a.value = btn.dataset.a; b.value = btn.dataset.b; update();
+    }));
+    update();
+  })();
+</script>
