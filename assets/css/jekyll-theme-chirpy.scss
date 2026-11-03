@@ -311,6 +311,10 @@ button:focus-visible {
 }
 
 @media (max-width: 719px) {
+  .ink-hero {
+    min-height: 36rem;
+  }
+
   .ink-hero::before {
     background: linear-gradient(180deg, rgb(20 33 61 / 92%) 0, rgb(20 33 61 / 55%) 42%, transparent 62%);
   }

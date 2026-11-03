@@ -70,10 +70,14 @@
         }
 
         // 라벨: 글은 제목, 카테고리는 이름, 태그는 #이름. 가장자리 근처 노드는 왼쪽에 쓴다.
+        // 좁은 화면에서는 겹침을 줄이려고 태그 라벨을 강조 중일 때만 쓰고 제목을 더 줄인다.
+        const narrow = W < 720;
+        if (n.type === 'tag' && narrow && !(near && near.has(n))) { ctx.globalAlpha = 1; continue; }
         const left = n.dx > W - 200;
         const full = on;
+        const max = narrow ? 9 : 16;
         let text = n.type === 'tag' ? '#' + n.label : n.label;
-        if (n.type === 'post' && !full && text.length > 16) text = text.slice(0, 15) + '…';
+        if (n.type === 'post' && !full && text.length > max) text = text.slice(0, max - 1) + '…';
         ctx.font = `${n.type === 'tag' ? 500 : 600} ${n.type === 'tag' ? 11 : 13}px ${FONT}`;
         ctx.textBaseline = 'middle';
         ctx.textAlign = left ? 'right' : 'left';
