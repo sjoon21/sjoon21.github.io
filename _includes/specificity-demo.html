@@ -34,7 +34,7 @@
       const c = InkSpecificity.compare(x, y);
       v.textContent = c === 0
         ? '우선순위가 같습니다. 나중에 쓴 규칙이 적용됩니다.'
-        : (c > 0 ? 'A가 이깁니다. ' : 'B가 이깁니다. ') + fmt(c > 0 ? x : y) + '이(가) ' + fmt(c > 0 ? y : x) + '보다 높습니다.';
+        : (c > 0 ? 'A가 이깁니다: ' : 'B가 이깁니다: ') + fmt(c > 0 ? x : y) + ' > ' + fmt(c > 0 ? y : x);
     }
     [a, b].forEach(i => i.addEventListener('input', update));
     document.querySelectorAll('#spec-demo .spec__presets button').forEach(btn => btn.addEventListener('click', () => {

@@ -22,7 +22,7 @@
       cv.width = Math.round(w * dpr);
       cv.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.max(14, Math.round((w * h) / 9000));
+      const n = Math.max(16, Math.round((w * h) / 7500));
       nodes = Array.from({ length: n }, () => ({
         x: Math.random() * w, y: Math.random() * h,
         vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
@@ -42,7 +42,8 @@
         for (const n of nodes) {
           const dx = yellow.x - n.x, dy = yellow.y - n.y, d = Math.hypot(dx, dy);
           if (d < REACH && d > 1) {
-            const pull = (1 - d / REACH) * 0.02;
+            // 멀리서는 살짝 끌리고, 40px 안으로 들어오면 밀려나 한곳에 뭉치지 않는다.
+            const pull = d < 40 ? -(1 - d / 40) * 0.05 : (1 - d / REACH) * 0.006;
             n.vx += (dx / d) * pull;
             n.vy += (dy / d) * pull;
           }
@@ -60,7 +61,7 @@
         for (let j = i + 1; j < nodes.length; j++) {
           const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
           if (d < LINK) {
-            ctx.strokeStyle = `rgba(143,163,255,${(1 - d / LINK) * 0.35})`;
+            ctx.strokeStyle = `rgba(143,163,255,${(1 - d / LINK) * 0.5})`;
             ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
           }
         }
