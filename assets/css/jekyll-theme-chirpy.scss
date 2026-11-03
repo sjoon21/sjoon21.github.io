@@ -75,18 +75,19 @@
   --sidebar-bg: #0a101d;
 }
 
-html:not([data-mode]),
-html[data-mode='light'] {
+/* 테마가 :root[data-bs-theme] 선택자를 쓰므로 우선순위를 같게 맞춘다 */
+:root:not([data-bs-theme]),
+:root[data-bs-theme='light'] {
   @include light-ink;
 }
 
 @media (prefers-color-scheme: dark) {
-  html:not([data-mode]) {
+  :root:not([data-bs-theme]) {
     @include dark-ink;
   }
 }
 
-html[data-mode='dark'] {
+:root[data-bs-theme='dark'] {
   @include dark-ink;
 }
 
