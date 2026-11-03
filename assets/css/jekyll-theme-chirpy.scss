@@ -72,6 +72,8 @@
   --card-shadow: none;
   --tag-border: #2e3b5c;
   --inline-code-bg: rgb(143 163 255 / 12%);
+  --highlight-bg-color: #0a101d;
+  --language-border-color: #25314d;
 
   --grid-dot: rgb(143 163 255 / 11%);
   --card-line: #25314d;
@@ -124,6 +126,11 @@ h5,
 h6 {
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+/* 설명 문장은 가는 글씨(300)라서 600·700만 불러온 명조 대신 본문 글꼴을 쓴다 */
+.post-desc {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
 }
 
 #sidebar .site-title {
